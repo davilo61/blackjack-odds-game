@@ -1,0 +1,25 @@
+name: blackjack_odds_app
+description: A Blackjack odds calculator built with Flutter.
+
+publish_to: 'none' # since it's a private app
+
+version: 1.0.0+1
+
+environment:
+  sdk: ">=2.17.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Add other dependencies here if you use any external packages
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/cards/
