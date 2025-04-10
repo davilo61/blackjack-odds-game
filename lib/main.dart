@@ -25,11 +25,11 @@ class BlackjackHomePage extends StatefulWidget {
 }
 
 class _BlackjackHomePageState extends State<BlackjackHomePage> {
-  String? dealerCard;
-  List<String?> playerCards = [null, null];
   List<String> dealerHand = [];
-  String resultMessage = '';
+  List<String> playerCards = [];
+  Widget? resultMessage = null; // Declare resultMessage here
   bool showFullDealerHand = false;
+  String oddsMessage = '';
 
   final List<String> cardOptions = [
     'A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'
@@ -60,112 +60,146 @@ class _BlackjackHomePageState extends State<BlackjackHomePage> {
     return total;
   }
 
-  void simulateDealerDraw() {
-    dealerHand = [dealerCard!];
-    while (calculateHandValue(dealerHand) < 17) {
-      final nextCard = cardOptions[rng.nextInt(cardOptions.length)];
-      dealerHand.add(nextCard);
+ void dealInitialCards() {
+  setState(() {
+    dealerHand = [
+      cardOptions[rng.nextInt(cardOptions.length)], // Face-up card
+      '?' // Face-down card
+    ];
+
+    playerCards = [
+      cardOptions[rng.nextInt(cardOptions.length)],
+      cardOptions[rng.nextInt(cardOptions.length)]
+    ];
+
+    resultMessage = null;
+    oddsMessage = '';
+    showFullDealerHand = false;
+
+    if (calculateHandValue(playerCards) == 21) {
+      revealDealerHand();
+      resultMessage = Text(
+        'Player hits Blackjack!',
+        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        textAlign: TextAlign.center,
+      );
     }
-  }
+  });
+}
 
-  double calculateBustProbability(List<String> hand) {
-    final int total = calculateHandValue(hand);
-    if (total >= 21) return 100.0;
-
-    int bustCount = 0;
-    int totalCards = 13;
-
-    for (var card in cardOptions) {
-      List<String> tempHand = List.from(hand)..add(card);
-      if (calculateHandValue(tempHand) > 21) bustCount++;
-    }
-
-    return (bustCount / totalCards) * 100;
-  }
-
-  String getBasicStrategy(String dealer, List<String> hand) {
-    int total = calculateHandValue(hand);
-    if (total <= 11) return 'Hit';
-    if (total >= 17) return 'Stand';
-    int dealerVal = cardValue(dealer);
-    if (total >= 12 && total <= 16) {
-      if (dealerVal >= 7) return 'Hit';
-      else return 'Stand';
-    }
-    return 'Undetermined';
-  }
-
-  void calculateOdds() {
-    if (dealerCard != null && playerCards.every((c) => c != null)) {
-      final filteredPlayerCards = playerCards.whereType<String>().toList();
-      final bustProb = calculateBustProbability(filteredPlayerCards);
-      final suggestion = getBasicStrategy(dealerCard!, filteredPlayerCards);
-
-      setState(() {
-        showFullDealerHand = false;
-        dealerHand = [dealerCard!];
-        resultMessage =
-            'Dealer Upcard: $dealerCard\n'
-            'Player: ${filteredPlayerCards.join(" + ")} (Total: ${calculateHandValue(filteredPlayerCards)})\n\n'
-            'Bust Probability if Hit: ${bustProb.toStringAsFixed(1)}%\n'
-            'Suggested Move: $suggestion';
-      });
-    }
+  void revealDealerHand() {
+    setState(() {
+      // Replace the face-down card with a random card
+      if (dealerHand.contains('?')) {
+        dealerHand[1] = cardOptions[rng.nextInt(cardOptions.length)];
+      }
+      showFullDealerHand = true;
+    });
   }
 
   void simulateHit() {
-    final availableCards = List<String>.from(cardOptions);
-    final randomCard = availableCards[rng.nextInt(availableCards.length)];
+    final randomCard = cardOptions[rng.nextInt(cardOptions.length)];
     final filteredPlayerCards = playerCards.whereType<String>().toList()..add(randomCard);
     final total = calculateHandValue(filteredPlayerCards);
 
     String newMessage = '';
     if (total > 21) {
-      simulateDealerDraw();
-      showFullDealerHand = true;
+      revealDealerHand();
       final dealerTotal = calculateHandValue(dealerHand);
       newMessage = 'Player busts! Total: $total\n'
-    'Dealer Hand: ${dealerHand.join(" + ")} (Total: $dealerTotal)';
+          'Dealer Hand: ${dealerHand.join(" + ")} (Total: $dealerTotal)';
     }
 
     setState(() {
       playerCards.add(randomCard);
       if (newMessage.isNotEmpty) {
-        resultMessage = newMessage;
+        resultMessage = Text(
+  newMessage,
+  style: TextStyle(fontSize: 16),
+  textAlign: TextAlign.center,
+);
       }
     });
   }
 
-  void stand() {
-    final filteredPlayerCards = playerCards.whereType<String>().toList();
-    final playerTotal = calculateHandValue(filteredPlayerCards);
-    simulateDealerDraw();
-    final dealerTotal = calculateHandValue(dealerHand);
+ void stand() {
+  final filteredPlayerCards = playerCards.whereType<String>().toList();
+  final playerTotal = calculateHandValue(filteredPlayerCards);
+  revealDealerHand();
+  final dealerTotal = calculateHandValue(dealerHand);
 
-    String result;
-    if (playerTotal > 21) result = "Player busts!";
-    else if (dealerTotal > 21) result = "Dealer busts!";
-    else if (playerTotal > dealerTotal) result = "You win!";
-    else if (playerTotal < dealerTotal) result = "Dealer wins!";
-    else result = "Push (tie)";
+  String result;
+  if (playerTotal > 21) result = "Player busts!";
+  else if (dealerTotal > 21) result = "Dealer busts!";
+  else if (playerTotal > dealerTotal) result = "You win!";
+  else if (playerTotal < dealerTotal) result = "Dealer wins!";
+  else result = "Push (tie)";
 
-    setState(() {
-      showFullDealerHand = true;
-      resultMessage =
-          'Player Hand: ${filteredPlayerCards.join(" + ")} (Total: $playerTotal)\n'
-          'Dealer Hand: ${dealerHand.join(" + ")} (Total: $dealerTotal)\n\n$result';
-    });
-  }
-
+  setState(() {
+    resultMessage = Text.rich(
+      TextSpan(
+        children: [
+          TextSpan(
+            text: 'Player Hand: ${filteredPlayerCards.join(" + ")} (Total: $playerTotal)\n'
+                'Dealer Hand: ${dealerHand.join(" + ")} (Total: $dealerTotal)\n\n',
+          ),
+          TextSpan(
+            text: result,
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ],
+      ),
+    );
+  });
+}
   void resetGame() {
     setState(() {
-      dealerCard = null;
-      playerCards = [null, null];
       dealerHand.clear();
-      resultMessage = '';
+      playerCards.clear();
+      resultMessage = null;
+      oddsMessage = '';
       showFullDealerHand = false;
     });
   }
+
+  void calculateOdds() {
+  final playerTotal = calculateHandValue(playerCards);
+  final dealerUpCard = dealerHand.isNotEmpty ? dealerHand[0] : null;
+
+  if (playerTotal > 21) {
+    setState(() {
+      oddsMessage = "Player has already busted!";
+    });
+    return;
+  }
+
+  if (dealerUpCard == null || dealerUpCard == '?') {
+    setState(() {
+      oddsMessage = "Dealer's upcard is not visible.";
+    });
+    return;
+  }
+
+  // Simplified odds calculation logic
+  double winOdds = (21 - playerTotal) / 21 * 100;
+  double loseOdds = (playerTotal / 21) * 100;
+
+  // Add recommendation logic
+  String recommendation;
+  if (winOdds > 50) {
+    recommendation = "Recommendation: Hit";
+  } else if (loseOdds > 50) {
+    recommendation = "Recommendation: Stand";
+  } else {
+    recommendation = "Recommendation: Caution";
+  }
+
+  setState(() {
+    oddsMessage = "Win Odds: ${winOdds.toStringAsFixed(2)}%\n"
+        "Lose Odds: ${loseOdds.toStringAsFixed(2)}%\n"
+        "$recommendation";
+  });
+}
 
   Widget buildCardImage(String card) {
     if (card == '?') {
@@ -194,8 +228,6 @@ class _BlackjackHomePageState extends State<BlackjackHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final filteredPlayerCards = playerCards.whereType<String>().toList();
-
     return Scaffold(
       appBar: AppBar(
         title: Text('Blackjack Odds Calculator'),
@@ -207,36 +239,65 @@ class _BlackjackHomePageState extends State<BlackjackHomePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              buildDropdown("Dealer's Upcard", dealerCard, (val) => setState(() => dealerCard = val)),
-              buildDropdown('Player Card 1', playerCards[0], (val) => setState(() => playerCards[0] = val)),
-              buildDropdown('Player Card 2', playerCards[1], (val) => setState(() => playerCards[1] = val)),
+              // Dealer Section
+              Text(
+                'Dealer',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 8),
+              buildHandDisplay("Dealer", dealerHand, hideSecondCard: !showFullDealerHand),
               SizedBox(height: 16),
-              if (filteredPlayerCards.length >= 2)
-                buildHandDisplay("Player Hand", filteredPlayerCards),
-              if (dealerHand.isNotEmpty)
-                buildHandDisplay("Dealer Hand", dealerHand, hideSecondCard: !showFullDealerHand),
+
+              // Player Section
+              Text(
+                'Player',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 8),
+              buildHandDisplay("Player", playerCards),
               SizedBox(height: 16),
-              if (resultMessage.isNotEmpty)
+
+              // Odds Section
+              ElevatedButton(
+                onPressed: calculateOdds,
+                style: ElevatedButton.styleFrom(
+                  padding: EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                child: Text('Calculate Odds'),
+              ),
+              if (oddsMessage.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 16.0),
+                  child: Text(
+                    oddsMessage,
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              SizedBox(height: 16),
+              // Result Message
+              if (resultMessage != null)
                 Card(
                   color: Colors.yellow[100],
                   child: Padding(
                     padding: const EdgeInsets.all(12.0),
-                    child: Text(
-                      resultMessage,
-                      style: TextStyle(fontSize: 16),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
+                    child: resultMessage,
                 ),
+        ),
               SizedBox(height: 16),
+
+              // Buttons
               ElevatedButton(
-                onPressed: calculateOdds,
+                onPressed: dealInitialCards,
                 style: ElevatedButton.styleFrom(
                   padding: EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   textStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
-                child: Text('Calculate Odds'),
+                child: Text('Start / Deal'),
               ),
               SizedBox(height: 12),
               ElevatedButton(
@@ -299,35 +360,6 @@ class _BlackjackHomePageState extends State<BlackjackHomePage> {
           ),
         SizedBox(height: 12),
       ],
-    );
-  }
-
-  Widget buildDropdown(String label, String? value, ValueChanged<String?> onChanged) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-            DropdownButton<String>(
-              value: value,
-              isExpanded: true,
-              hint: Text('Select a card'),
-              onChanged: onChanged,
-              items: cardOptions.map((card) {
-                return DropdownMenuItem<String>(
-                  value: card,
-                  child: Text(card),
-                );
-              }).toList(),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
