@@ -1,16 +1,14 @@
-# blackjack_odds_app
+# Blackjack Odds Calculator
 
-A new Flutter project.
+This is a Flutter app that calculates the odds of winning in a game of Blackjack. It provides recommendations based on the player's hand and the dealer's upcard.
 
-## Getting Started
+## Features
+- Displays the player's and dealer's hands.
+- Calculates win and lose odds.
+- Provides recommendations (Hit, Stand, or Caution).
+- Supports multiple platforms (Windows, macOS, Linux).
 
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## How to Run
+1. Clone the repository:
+   ```bash
+   git clone <repository-url>
