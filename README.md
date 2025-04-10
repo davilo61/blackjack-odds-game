@@ -12,3 +12,7 @@ This is a Flutter app that calculates the odds of winning in a game of Blackjack
 1. Clone the repository:
    ```bash
    git clone <repository-url>
+2. Navigate to the project directory
+   cd blackjack_odds_app
+3. Run the app:
+   flutter run
